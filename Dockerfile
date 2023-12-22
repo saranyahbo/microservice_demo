@@ -1,21 +1,15 @@
-FROM golang:1.17-buster AS build
+FROM maven:3.8-jdk-11 AS build
+
+WORKDIR /project
+
+COPY ./javaapp/ /project
+
+RUN mvn clean package
+
+FROM openjdk:11-jre-slim
 
 WORKDIR /app
 
-COPY go.mod ./
-COPY go.sum ./
-RUN go mod download
+COPY --from=build /project/target/helloworld-1.0-SNAPSHOT.jar ./
 
-COPY *.go ./
-
-RUN go build -o /microservice_demo
-
-FROM gcr.io/distroless/base-debian10
-
-WORKDIR /
-
-COPY --from=build /microservice_demo /microservice_demo
-
-USER nonroot:nonroot
-
-ENTRYPOINT ["/microservice_demo"]
+CMD ["java", "-jar", "./helloworld-1.0-SNAPSHOT.jar"]
